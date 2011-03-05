@@ -8,29 +8,42 @@
 */
 
 function User(stream) {
-	var CLIENT_DISCONNECTED = 0;
-	var CLIENT_CONNECTED = 1;
-	var CLIENT_LOGGED_IN = 2;
-
 	this.username = null;
 	this.stream = stream;
-	this.status = CLIENT_CONNECTED;
+	this.logged_in = false;
+	this.alive = true;
+	this.channels = [];
 	
 	/* Functions */
 	
-	this.sendMessage = function(type, argument) {
-		var jsonMessage = [type, argument];
-		this.stream.write(JSON.stringify(jsonMessage) + "\n");
+	this.sendMessage = function(jsonMessage) {
+		if (this.stream.writable && this.alive)
+			this.stream.write(JSON.stringify(jsonMessage) + "\n");
 	};
 	
+	this.joinChannel = function(channel) {
+		this.channels.push(channel);
+	}
+	
+	this.leaveChannel = function(channel) {
+		for (var i = 0; i < this.channels.length; i++) {
+			if (channel == this.channels[i])
+				this.channels.splice(i, 1);
+		}
+	}
+	
 	this.bork = function(reason) {
-		this.sendMessage('bork', reason);
+		this.sendMessage(['bork', reason]);
 		this.stream.end();
 	};
 	
-	this.handleMessage = function(message) {
-		this.stream.write(message);
+	this.die() {
+		this.alive = false;
+		this.channels.forEach(function(channel) {
+			channel.removeUser(this);
+		}
 	}
+
 }
 
 exports.createUser = function (stream) {
