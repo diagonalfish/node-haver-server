@@ -13,6 +13,7 @@ var VERSION = 0.1;
 //Libs
 var net = require('net');
 var Log = require('log');
+var lines = require('lines');
 
 var User = require('./user');
 
@@ -29,13 +30,15 @@ var haver_server = net.createServer(function(stream) {
 	log.info("New client from " + stream.remoteAddress);
 	var newuser = User.createUser(stream);
 	stream.user = newuser;
+	stream.setEncoding('utf8');
+	lines(stream);
 	
 	/* Set up listeners */
-	stream.addListener("data", function(data) {
+	stream.on("line", function(data) {
 		stream.user.handleMessage(data);
 	});
 	
-	stream.addListener("end", function() {
+	stream.on("end", function() {
 		log.info("Client from " + stream.remoteAddress + " disconnected.");
 	});
 	
